@@ -1,43 +1,39 @@
+import os
+
 def DICer(**kwargs):
 
 	if 'subset' in kwargs.keys(): subset = 'subset_{}'.format(kwargs['subset']) #specify subset you want to analyze based on ID in paraview
-	if 'frames' in kwargs.keys(): frames = kwargs['frames'] #this is based on the number of solution text files in the dice_working_dir
 	if 'data' in kwargs.keys(): data = kwargs['data'] #specify what data you want plotted
 	if 'scale' in kwargs.keys(): scale = kwargs['scale'] #scaling factor in [in/pxl], used for plotting displacements
 
 	import matplotlib.pyplot as plt
 
 	fileList = []
-	file_indices=[]
-	for number in range(frames):
-		index = '0'*len(str(frames)) + str(number)
-		index = index[-4:]
-		file_indices.append(index)
+	for filename in os.listdir('C:\\Users\\aa55865\\dice_working_dir\\results'):
+		if filename.endswith(".txt"):
+			file = open(filename)
+			fileList.append(file.readlines())
+			file.close()
+		else:
+			continue
+	fileList.pop() #remove time.txt file from list
 
-	for index in file_indices: #import DICe solution files (file_00 --> file_n) into list where each list item is a list of lines in each file
-		file = open('DICe_solution_{}.txt'.format(index))
-		file = file.readlines()
-		fileList.append(file)
-
-
-	for file in fileList: 
+	for file in fileList: #[['line1, line1, line1','line2, line2, line2'...],[file2lines]]
 		file.remove(file[0]) #remove first row of headers from each file
-		subsets = len(fileList[0]) 
-		for line in range(0,subsets): 
-			file[line] = file[line].split(',') #split file lines by comma to separate data values
+		for index, line in enumerate(file):
+			file[index] = line.split(',')
 				
 			
 	dataDict = {} #organize DICe data into dictionary by subset, then store data for each frame (xx_strain, yy_strain, etc.) under each subset
 	for file in fileList: 
 		for line in file:
 			dataDict['subset_{}'.format(line[0])] = {}
-	frameCount = 0
+
 	frameVals = []
-	for file in fileList: 
-		frameVals.append(frameCount)
+	for frame, file in enumerate(fileList):
+		frameVals.append(frame)
 		for line in file:
-			dataDict['subset_{}'.format(line[0])].update({'frame_{}'.format(frameCount): {'x_coordinate':float(line[1]),'y_coordinate':float(line[2]),'x_displacement':float(line[3]),'y_displacement':float(line[4]),'sigma':float(line[5]),'gamma':float(line[6]),'beta':float(line[7]),'status_flag':float(line[8]),'uncertainty':float(line[9]),'xx_strain':float(line[10]),'yy_strain':float(line[11]),'xy_strain':float(line[12])}})
-		frameCount+=1
+			dataDict['subset_{}'.format(line[0])].update({'frame_{}'.format(frame): {'x_coordinate':float(line[1]),'y_coordinate':float(line[2]),'x_displacement':float(line[3]),'y_displacement':float(line[4]),'sigma':float(line[5]),'gamma':float(line[6]),'beta':float(line[7]),'status_flag':float(line[8]),'uncertainty':float(line[9]),'xx_strain':float(line[10]),'yy_strain':float(line[11]),'xy_strain':float(line[12])}})
 
 	def ListMult(multiplier,numlist): #multiply a list of numbers by a float
 		newlist = [multiplier*i for i in numlist]
@@ -56,8 +52,6 @@ def DICer(**kwargs):
 		plt.ylabel(data)
 	plt.title('{}: {}'.format(subset,data))
 	return plt.show()
-
-DICer(frames=1178,subset=329,data='x_displacement',scale=(0.053/32))
 
 
 # DISPLACEMENT_X          // u
